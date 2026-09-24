@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TravelMate ✈️ Your Cute Scrapbook Travel Planner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fredoka:wght@400;500;600;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Floating Cute Scrapbook Sticker Elements -->
+  <div class="scrapbook-bg-elements" aria-hidden="true">
+    <span class="doodle doodle-cloud c1">☁️</span>
+    <span class="doodle doodle-star s1">✨</span>
+    <span class="doodle doodle-heart h1">💖</span>
+    <span class="doodle doodle-plane p1">✈️</span>
+    <span class="doodle doodle-sun su1">☀️</span>
+    <span class="doodle doodle-star s2">⭐</span>
+  </div>
+
+  <!-- Cute Scrapbook Header / Navigation -->
+  <header class="navbar-wrapper">
+    <div class="tape-strip top-tape"></div>
+    <nav class="navbar container">
+      <a href="#home" class="brand-logo" onclick="switchSection('home')">
+        <span class="logo-icon">🎒</span>
+        <span class="logo-text">Travel<span class="highlight-pink">Mate</span></span>
+        <span class="stamp-badge">v1.0</span>
+      </a>
+
+      <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle menu">☰</button>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#home" class="nav-btn active" data-target="home">🏠 Home</a></li>
+        <li><a href="#plan" class="nav-btn" data-target="plan">✏️ Plan Trip</a></li>
+        <li><a href="#itinerary" class="nav-btn" data-target="itinerary">📅 Itinerary</a></li>
+        <li><a href="#packing" class="nav-btn" data-target="packing">🧳 Packing List</a></li>
+        <li><a href="#budget" class="nav-btn" data-target="budget">🪙 Budget</a></li>
+        <li><a href="#trips" class="nav-btn" data-target="trips">📖 My Trips</a></li>
+        <li><a href="#destinations" class="nav-btn" data-target="destinations">🌸 Destinations</a></li>
+        <li><a href="#about" class="nav-btn" data-target="about">💌 About</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <!-- 1. HOME SECTION -->
+    <section id="home" class="page-section active">
+      <div class="container hero-layout">
+        <div class="hero-content">
+          <div class="cute-tag">✨ Your Personal Travel Diary & Planner</div>
+          <h1 class="hero-title">Collect moments, <br><span class="handwritten highlight-mint">not just itineraries!</span> 🌸</h1>
+          <p class="hero-desc">
+            Organize trips with pastel washi tape vibes, cute polaroid memories, daily schedules, packing checklists and joyful budget trackers.
+          </p>
+          <div class="hero-actions">
+            <button class="btn btn-primary" onclick="switchSection('plan')">✏️ Start Planning a Trip</button>
+            <button class="btn btn-secondary" onclick="switchSection('itinerary')">👀 View Sample Itinerary</button>
+          </div>
+          
+          <div class="mini-stats">
+            <div class="stat-pill"><span class="pill-emoji">🗺️</span> <strong>12+</strong> Dream Destinations</div>
+            <div class="stat-pill"><span class="pill-emoji">🎒</span> <strong>100%</strong> Scrapbook Magic</div>
+            <div class="stat-pill"><span class="pill-emoji">📝</span> <strong>0</strong> Stress Packing</div>
+          </div>
+        </div>
+
+        <div class="hero-scrapbook-board">
+          <div class="polaroid polaroid-rot-left">
+            <div class="tape-strip washi-yellow"></div>
+            <img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=500&auto=format&fit=crop&q=60" alt="Kyoto temple in spring" />
+            <p class="polaroid-caption">Kyoto in Blossom 🌸</p>
+          </div>
+          <div class="polaroid polaroid-rot-right">
+            <div class="tape-strip washi-pink"></div>
+            <img src="https://images.unsplash.com/photo-1533105079780-92b9be482077?w=500&auto=format&fit=crop&q=60" alt="Santorini blue domes" />
+            <p class="polaroid-caption">Santorini Sunset 🇬🇷</p>
+          </div>
+          <div class="sticker sticker-stamp">✈️ POSTCARD</div>
+          <div class="sticker sticker-flower">🌼</div>
+        </div>
+      </div>
+
+      <!-- Quick Feature Cards -->
+      <div class="container feature-grid">
+        <div class="feature-card pastel-pink" onclick="switchSection('plan')">
+          <div class="feature-icon">📝</div>
+          <h3>Custom Trip Builder</h3>
+          <p>Choose dates, travel style, pace, travelers and cozy stays with instant setup.</p>
+        </div>
+        <div class="feature-card pastel-yellow" onclick="switchSection('itinerary')">
+          <div class="feature-icon">🗺️</div>
+          <h3>Daily Day Planner</h3>
+          <p>Interactive Morning, Afternoon & Evening schedules tagged with cute spots.</p>
+        </div>
+        <div class="feature-card pastel-mint" onclick="switchSection('packing')">
+          <div class="feature-icon">🧳</div>
+          <h3>Interactive Checklist</h3>
+          <p>Never forget passport, film camera, or socks with tickable packing lists.</p>
+        </div>
+        <div class="feature-card pastel-teal" onclick="switchSection('budget')">
+          <div class="feature-icon">💸</div>
+          <h3>Pastel Coin Tracker</h3>
+          <p>Keep track of stays, matcha lattes and souvenirs without spreadsheet tears.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. PLAN TRIP SECTION -->
+    <section id="plan" class="page-section">
+      <div class="container section-header">
+        <span class="cute-tag">🎒 Scrapbook Planner</span>
+        <h2>Plan Your Next Dream Journey</h2>
+        <p>Fill out this cute travel questionnaire to craft your personalized adventure!</p>
+      </div>
+
+      <div class="container form-wrapper">
+        <div class="tape-strip washi-mint form-tape"></div>
+        <form id="tripForm" class="scrapbook-form">
+          <div class="form-grid">
+            <!-- Destination -->
+            <div class="form-group full-width">
+              <label for="destInput">🌸 Where are you dreaming to go? (Destination)</label>
+              <input type="text" id="destInput" placeholder="e.g. Kyoto & Osaka, Japan / Amalfi Coast, Italy" required>
+            </div>
+
+            <!-- Dates -->
+            <div class="form-group">
+              <label for="depDate">🛫 Departure Date</label>
+              <input type="date" id="depDate" required>
+            </div>
+            <div class="form-group">
+              <label for="retDate">🛬 Return Date</label>
+              <input type="date" id="retDate" required>
+            </div>
+
+            <!-- Estimated Duration Calculated -->
+            <div class="form-group">
+              <label for="calcDuration">⏳ Duration (Days)</label>
+              <input type="number" id="calcDuration" min="1" max="60" value="5" placeholder="5">
+            </div>
+
+            <!-- Budget & Currency -->
+            <div class="form-group">
+              <label for="currencySelect">🪙 Currency</label>
+              <select id="currencySelect">
+                <option value="$" selected>USD ($)</option>
+                <option value="€">EUR (€)</option>
+                <option value="£">GBP (£)</option>
+                <option value="¥">JPY (¥)</option>
+                <option value="₹">INR (₹)</option>
+                <option value="A$">AUD (A$)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="budgetInput">💰 Estimated Budget (per person)</label>
+              <input type="number" id="budgetInput" placeholder="e.g. 1500" required>
+            </div>
+
+            <!-- Travellers Type -->
+            <div class="form-group">
+              <label for="travellerType">👥 Who is travelling?</label>
+              <select id="travellerType">
+                <option value="Solo Adventurer">Solo Adventurer 🎒</option>
+                <option value="Couple / Pair" selected>Couple / Pair 💑</option>
+                <option value="Friends Squad">Friends Squad 👯‍♀️</option>
+                <option value="Family Holiday">Family Holiday 👨‍👩‍👧‍👦</option>
+              </select>
+            </div>
+
+            <!-- Travellers Count -->
+            <div class="form-group">
+              <label for="travellerCount">🔢 Number of Travellers</label>
+              <input type="number" id="travellerCount" min="1" max="25" value="2" required>
+            </div>
+
+            <!-- Travel Style -->
+            <div class="form-group">
+              <label for="travelStyle">✨ Travel Style</label>
+              <select id="travelStyle">
+                <option value="Cultural & Historic">Cultural & Historic ⛩️</option>
+                <option value="Adventure & Hiking">Adventure & Nature 🌲</option>
+                <option value="Beach & Island Chill">Beach & Coastal Chill 🏖️</option>
+                <option value="Luxury & Spa">Luxury & Wellness 💎</option>
+                <option value="Romantic Getaway">Romantic Getaway 🕯️</option>
+                <option value="Foodie Safari">Foodie & Cafe Hopping 🥐</option>
+              </select>
+            </div>
+
+            <!-- Accommodation -->
+            <div class="form-group">
+              <label for="accomType">🏡 Accommodation Type</label>
+              <select id="accomType">
+                <option value="Cozy Boutique Hotel" selected>Cozy Boutique Hotel 🏨</option>
+                <option value="Traditional Ryokan / B&B">Traditional Ryokan / B&B 🍵</option>
+                <option value="Social Hostel">Social Backpacker Hostel 🛏️</option>
+                <option value="Scenic Luxury Resort">Scenic Luxury Resort 🌴</option>
+                <option value="Glamping & Cabin">Glamping & Forest Cabin ⛺</option>
+              </select>
+            </div>
+
+            <!-- Pace -->
+            <div class="form-group">
+              <label for="tripPace">🏃 Trip Pace</label>
+              <select id="tripPace">
+                <option value="Relaxed (Slow mornings & chill cafes)">Relaxed (Slow mornings & chill) ☕</option>
+                <option value="Moderate (Balanced sightseeing & rest)" selected>Moderate (Balanced pace) ⚖️</option>
+                <option value="Fast-paced (See everything!)">Fast-paced (Pack every minute!) ⚡</option>
+              </select>
+            </div>
+
+            <!-- Notes / Special wishes -->
+            <div class="form-group full-width">
+              <label for="tripNotes">📝 Special Scrapbook Wishes / Notes</label>
+              <textarea id="tripNotes" rows="2" placeholder="e.g. Try matcha soft-serve, visit Ghibli park, thrift shopping!"></textarea>
+            </div>
+          </div>
+
+          <div class="form-footer">
+            <button type="submit" class="btn btn-primary btn-large">🌸 Save Trip & Generate Scrapbook</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- 3. ITINERARY SECTION -->
+    <section id="itinerary" class="page-section">
+      <div class="container section-header">
+        <span class="cute-tag">📅 Daily Scrapbook Timeline</span>
+        <h2 id="itineraryTitle">Kyoto & Tokyo Blossom Trip</h2>
+        <p id="itinerarySub">5 Days of temples, cute bakeries, and neon evenings</p>
+      </div>
+
+      <div class="container itinerary-board">
+        <!-- Trip summary banner -->
+        <div class="itinerary-meta-card">
+          <div class="meta-item"><span class="meta-icon">📍</span> <strong>Destination:</strong> <span id="itinDest">Kyoto & Tokyo, Japan</span></div>
+          <div class="meta-item"><span class="meta-icon">🏨</span> <strong>Hotel / Base:</strong> <span id="itinHotel">Komorebi Boutique Ryokan</span></div>
+          <div class="meta-item"><span class="meta-icon">👥</span> <strong>Travelers:</strong> <span id="itinPax">2 (Couple)</span></div>
+          <div class="meta-item"><span class="meta-icon">🕊️</span> <strong>Pace:</strong> <span id="itinPace">Moderate</span></div>
+        </div>
+
+        <!-- Day Switcher Tabs -->
+        <div class="day-tabs" id="dayTabsContainer">
+          <button class="day-tab active" data-day="1">Day 1 🍵 Arrival & Teahouse</button>
+          <button class="day-tab" data-day="2">Day 2 ⛩️ Bamboo & Torii</button>
+          <button class="day-tab" data-day="3">Day 3 🎨 Art & Gion Street</button>
+          <button class="day-tab" data-day="4">Day 4 🚅 Bullet Train to Tokyo</button>
+          <button class="day-tab" data-day="5">Day 5 🌸 Shibuya & Souvenirs</button>
+        </div>
+
+        <!-- Day Schedule Content Container -->
+        <div class="day-schedule-card" id="dayScheduleCard">
+          <div class="day-header-pill">
+            <h3 id="currentDayHeader">Day 1: Arrival & Lantern Evening</h3>
+            <span class="hotel-pill" id="currentDayHotel">🏨 Staying at: Komorebi Boutique Ryokan</span>
+          </div>
+
+          <div class="schedule-timeline" id="scheduleTimeline">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. PACKING LIST SECTION -->
+    <section id="packing" class="page-section">
+      <div class="container section-header">
+        <span class="cute-tag">🧳 Don't Forget Anything!</span>
+        <h2>Cute Packing Checklist</h2>
+        <p>Tick off essentials as you pack your bags. Add your own custom must-haves!</p>
+      </div>
+
+      <div class="container packing-container">
+        <!-- Packing Category Filters -->
+        <div class="packing-nav">
+          <button class="cat-pill active" data-cat="all">🌈 All Items</button>
+          <button class="cat-pill" data-cat="documents">📄 Documents</button>
+          <button class="cat-pill" data-cat="clothes">👗 Clothes & Wear</button>
+          <button class="cat-pill" data-cat="toiletries">🧴 Toiletries & Care</button>
+          <button class="cat-pill" data-cat="tech">📷 Gadgets & Tech</button>
+          <button class="cat-pill" data-cat="misc">🍬 Cute Extras</button>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="progress-box">
+          <div class="progress-label">
+            <span>Packing Progress: <strong id="packPercent">0%</strong></span>
+            <span id="packCount">0/15 packed</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="packBar"></div>
+          </div>
+        </div>
+
+        <!-- Add Item Box -->
+        <div class="add-packing-form">
+          <input type="text" id="newPackItem" placeholder="Add custom item (e.g. Polaroid film, comfy sneakers)...">
+          <select id="newPackCat">
+            <option value="documents">📄 Documents</option>
+            <option value="clothes">👗 Clothes</option>
+            <option value="toiletries">🧴 Toiletries</option>
+            <option value="tech">📷 Tech</option>
+            <option value="misc" selected>🍬 Cute Extras</option>
+          </select>
+          <button class="btn btn-secondary" id="addPackBtn">+ Add</button>
+        </div>
+
+        <!-- Checklist grid -->
+        <div class="packing-list-grid" id="packingListGrid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. BUDGET SECTION -->
+    <section id="budget" class="page-section">
+      <div class="container section-header">
+        <span class="cute-tag">🪙 Piggy Bank Tracker</span>
+        <h2>Travel Budget & Expenses</h2>
+        <p>Keep your vacation coins organized with clear breakdowns & cute charts.</p>
+      </div>
+
+      <div class="container budget-layout">
+        <!-- Budget Stats Overview -->
+        <div class="budget-summary-board">
+          <div class="budget-stat-card pastel-yellow">
+            <span class="b-icon">🎯</span>
+            <span class="b-label">Total Planned Budget</span>
+            <h3 id="statTotalBudget">$2,400</h3>
+          </div>
+          <div class="budget-stat-card pastel-pink">
+            <span class="b-icon">💸</span>
+            <span class="b-label">Total Spent So Far</span>
+            <h3 id="statTotalSpent">$1,630</h3>
+          </div>
+          <div class="budget-stat-card pastel-mint">
+            <span class="b-icon">🌱</span>
+            <span class="b-label">Remaining Balance</span>
+            <h3 id="statRemaining">$770</h3>
+          </div>
+        </div>
+
+        <div class="budget-content-grid">
+          <!-- Visual Category Breakdown -->
+          <div class="budget-card breakdown-card">
+            <div class="tape-strip washi-pink"></div>
+            <h3>Category Breakdown</h3>
+            <div class="bar-items" id="budgetCategoryBars">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Add Expense & Recent Log -->
+          <div class="budget-card expense-card">
+            <div class="tape-strip washi-teal"></div>
+            <h3>Add New Scrapbook Expense</h3>
+            <form id="expenseForm" class="mini-form">
+              <input type="text" id="expDesc" placeholder="Item name (e.g. Matcha soft serve, Bullet train)" required>
+              <div class="form-row">
+                <input type="number" id="expAmount" placeholder="Amount" min="1" required>
+                <select id="expCategory">
+                  <option value="Flights">✈️ Transport</option>
+                  <option value="Stay">🏨 Stays</option>
+                  <option value="Food" selected>🥐 Food & Treats</option>
+                  <option value="Activities">🎟️ Activities</option>
+                  <option value="Shopping">🛍️ Souvenirs</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-primary btn-full">+ Log Expense</button>
+            </form>
+
+            <h4 class="recent-title">Recent Expenses 🧾</h4>
+            <div class="expense-list" id="expenseList">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. MY TRIPS SECTION -->
+    <section id="trips" class="page-section">
+      <div class="container section-header">
+        <span class="cute-tag">📖 Scrapbook Memory Box</span>
+        <h2>My Saved Trips</h2>
+        <p>All your planned and upcoming adventures, organized like photo albums.</p>
+      </div>
+
+      <div class="container">
+        <div class="my-trips-grid" id="myTripsGrid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. DESTINATIONS SECTION -->
+    <section id="destinations" class="page-section">
+      <div class="container section-header">
+        <span class="cute-tag">🌸 Cute Wishlist</span>
+        <h2>Featured Dream Destinations</h2>
+        <p>Curated pastel hotspots to inspire your next wanderlust scrapbooking.</p>
+      </div>
+
+      <div class="container destinations-grid" id="destGrid">
+        <!-- Destination Cards -->
+      </div>
+    </section>
+
+    <!-- 8. ABOUT SECTION -->
+    <section id="about" class="page-section">
+      <div class="container section-header">
+        <span class="cute-tag">💌 Scrapbook Story</span>
+        <h2>About TravelMate</h2>
+        <p>Made with love, pastel stickers, and warm cups of tea.</p>
+      </div>
+
+      <div class="container about-wrapper">
+        <div class="about-card">
+          <div class="tape-strip washi-yellow"></div>
+          <div class="about-flex">
+            <div class="about-polaroid">
+              <img src="https://images.unsplash.com/photo-1527631746610-bca00a040d60?w=500&auto=format&fit=crop&q=60" alt="Travel diary & camera">
+              <p class="polaroid-caption">Travel happy! ✨</p>
+            </div>
+            <div class="about-text">
+              <h3>Hello, fellow wanderer! 🎒🌸</h3>
+              <p>
+                <strong>TravelMate</strong> was created to bring back the pure charm of physical scrapbooks, cute journals, and pastel sticky notes into the digital era.
+              </p>
+              <p>
+                Instead of cold spreadsheets and endless stressful booking tabs, we believe travel planning should feel warm, joyful, and creative — like decorating a personalized travel diary before embarking on your journey.
+              </p>
+              <div class="about-values">
+                <div class="value-item">🎀 <strong>Pastel & Playful:</strong> Aesthetic cards and hand-drawn doodles.</div>
+                <div class="value-item">🧘‍♀️ <strong>Stress-Free:</strong> Simplified daily plans, packing lists, and coin trackers.</div>
+                <div class="value-item">💾 <strong>No Login Required:</strong> Pure client-side instant functionality.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Cute Scrapbook Footer -->
+  <footer class="scrapbook-footer">
+    <div class="tape-strip bottom-tape"></div>
+    <div class="container footer-content">
+      <div class="footer-col">
+        <div class="brand-logo footer-logo">
+          <span class="logo-icon">🎒</span>
+          <span class="logo-text">Travel<span class="highlight-pink">Mate</span></span>
+        </div>
+        <p class="footer-desc">Your cozy digital scrapbook for pastel adventures, mindful packing, and sweet travel memories.</p>
+      </div>
+
+      <div class="footer-col">
+        <h4>Navigation</h4>
+        <ul class="footer-links">
+          <li><a href="#home" onclick="switchSection('home')">Home</a></li>
+          <li><a href="#plan" onclick="switchSection('plan')">Plan a Trip</a></li>
+          <li><a href="#itinerary" onclick="switchSection('itinerary')">Daily Itinerary</a></li>
+          <li><a href="#packing" onclick="switchSection('packing')">Packing List</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>More Pages</h4>
+        <ul class="footer-links">
+          <li><a href="#budget" onclick="switchSection('budget')">Budget Tracker</a></li>
+          <li><a href="#trips" onclick="switchSection('trips')">My Trips</a></li>
+          <li><a href="#destinations" onclick="switchSection('destinations')">Destinations</a></li>
+          <li><a href="#about" onclick="switchSection('about')">About Us</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col stamp-col">
+        <div class="postal-stamp">
+          <span>PAR AVION ✈️</span>
+          <strong>TRAVELMATE</strong>
+          <small>PASSPORT TO JOY</small>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 TravelMate. Crafted with 💖, washi tape & pastel dreams.</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
