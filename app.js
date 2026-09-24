@@ -1,8 +1,9 @@
 /* =========================================================
    TRAVELMATE - Interactive Logic & Scrapbook Controller
+   Integrated with Minimal Persistent Database (TM_DB)
    ========================================================= */
 
-// --- 1. SAMPLE REALISTIC DATA ---
+// --- 1. DEFAULT SEED DATA ---
 const sampleDestinations = [
   {
     id: 'kyoto',
@@ -72,43 +73,54 @@ const sampleDestinations = [
   }
 ];
 
-let myTripsData = [
+const initialTrips = [
   {
     id: 'trip-1',
     destination: 'Kyoto & Tokyo, Japan',
     image: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=600&auto=format&fit=crop&q=60',
     dates: 'Apr 12 - Apr 17 (5 Days)',
-    travellers: '2 Travellers (Couple / Pair)',
-    style: 'Cultural & Historic',
+    duration: 5,
     budget: '$2,400',
-    hotel: 'Komorebi Boutique Ryokan',
-    pace: 'Moderate'
+    currency: '$',
+    travellersCount: 2,
+    travellerType: 'Couple / Pair',
+    travelStyle: 'Cultural & Historic',
+    accommodation: 'Komorebi Boutique Ryokan',
+    pace: 'Moderate',
+    notes: 'Try matcha soft-serve, visit Ghibli park, thrift shopping!'
   },
   {
     id: 'trip-2',
     destination: 'Amalfi Coast, Italy',
     image: 'https://images.unsplash.com/photo-1533105079780-92b9be482077?w=600&auto=format&fit=crop&q=60',
     dates: 'Jun 20 - Jun 24 (4 Days)',
-    travellers: '2 Travellers (Romantic)',
-    style: 'Romantic Getaway',
+    duration: 4,
     budget: '€1,950',
-    hotel: 'Villa Bellavista Positano',
-    pace: 'Relaxed'
+    currency: '€',
+    travellersCount: 2,
+    travellerType: 'Couple / Pair',
+    travelStyle: 'Romantic Getaway',
+    accommodation: 'Villa Bellavista Positano',
+    pace: 'Relaxed',
+    notes: 'Lemon granita and sunset boat tour.'
   },
   {
     id: 'trip-3',
     destination: 'Zermatt, Switzerland',
     image: 'https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?w=600&auto=format&fit=crop&q=60',
     dates: 'Sep 05 - Sep 09 (4 Days)',
-    travellers: '3 Travellers (Friends Squad)',
-    style: 'Adventure & Hiking',
+    duration: 4,
     budget: '$2,100',
-    hotel: 'Chalet Edelweiss Hideaway',
-    pace: 'Moderate'
+    currency: '$',
+    travellersCount: 3,
+    travellerType: 'Friends Squad',
+    travelStyle: 'Adventure & Hiking',
+    accommodation: 'Chalet Edelweiss Hideaway',
+    pace: 'Moderate',
+    notes: 'Matterhorn sunrise hike and fondue dinner.'
   }
 ];
 
-// Sample multi-day schedules
 const sampleScheduleDays = {
   1: {
     title: 'Arrival, Japanese Garden & Lantern Tea',
@@ -267,27 +279,25 @@ const sampleScheduleDays = {
   }
 };
 
-// Initial Packing items
-let packingItems = [
-  { id: 1, text: 'Passport & Photocopies', category: 'documents', checked: true },
-  { id: 2, text: 'Boarding Pass & Hotel Confirmations', category: 'documents', checked: true },
-  { id: 3, text: 'Travel Insurance Card', category: 'documents', checked: false },
-  { id: 4, text: 'Comfortable Walking Sneakers', category: 'clothes', checked: true },
-  { id: 5, text: 'Pastel Cardigan / Light Jacket', category: 'clothes', checked: false },
-  { id: 6, text: 'Cozy Pajamas & Extra Socks', category: 'clothes', checked: false },
-  { id: 7, text: 'Sunscreen & Lip Balm', category: 'toiletries', checked: true },
-  { id: 8, text: 'Mini Travel Toothbrush & Paste', category: 'toiletries', checked: false },
-  { id: 9, text: 'Hydrating Face Mist', category: 'toiletries', checked: false },
-  { id: 10, text: 'Universal Power Adapter', category: 'tech', checked: true },
-  { id: 11, text: 'Portable Powerbank (10,000mAh)', category: 'tech', checked: true },
-  { id: 12, text: 'Polaroid Instant Camera + Film', category: 'tech', checked: false },
-  { id: 13, text: 'Cute Travel Journal & Pastel Gel Pens', category: 'misc', checked: true },
-  { id: 14, text: 'Washi Tape Rolls & Glue Tape', category: 'misc', checked: false },
-  { id: 15, text: 'Reusable Canvas Tote Bag', category: 'misc', checked: false }
+const initialPackingSeed = [
+  { id: 'p-1', text: 'Passport & Photocopies', category: 'documents', checked: true },
+  { id: 'p-2', text: 'Boarding Pass & Hotel Confirmations', category: 'documents', checked: true },
+  { id: 'p-3', text: 'Travel Insurance Card', category: 'documents', checked: false },
+  { id: 'p-4', text: 'Comfortable Walking Sneakers', category: 'clothes', checked: true },
+  { id: 'p-5', text: 'Pastel Cardigan / Light Jacket', category: 'clothes', checked: false },
+  { id: 'p-6', text: 'Cozy Pajamas & Extra Socks', category: 'clothes', checked: false },
+  { id: 'p-7', text: 'Sunscreen & Lip Balm', category: 'toiletries', checked: true },
+  { id: 'p-8', text: 'Mini Travel Toothbrush & Paste', category: 'toiletries', checked: false },
+  { id: 'p-9', text: 'Hydrating Face Mist', category: 'toiletries', checked: false },
+  { id: 'p-10', text: 'Universal Power Adapter', category: 'tech', checked: true },
+  { id: 'p-11', text: 'Portable Powerbank (10,000mAh)', category: 'tech', checked: true },
+  { id: 'p-12', text: 'Polaroid Instant Camera + Film', category: 'tech', checked: false },
+  { id: 'p-13', text: 'Cute Travel Journal & Pastel Gel Pens', category: 'misc', checked: true },
+  { id: 'p-14', text: 'Washi Tape Rolls & Glue Tape', category: 'misc', checked: false },
+  { id: 'p-15', text: 'Reusable Canvas Tote Bag', category: 'misc', checked: false }
 ];
 
-// Budget Mock Expenses
-let budgetData = {
+const initialBudgetSeed = {
   totalBudget: 2400,
   currency: '$',
   categories: {
@@ -298,19 +308,167 @@ let budgetData = {
     Shopping: { allocated: 150, spent: 40, color: '#A78BFA' }
   },
   expenses: [
-    { desc: 'Flight Tickets (Return)', category: 'Flights', amount: 780 },
-    { desc: 'Ryokan 3 Nights Deposit', category: 'Stay', amount: 520 },
-    { desc: 'Kinkaku-ji & Shrine Entry', category: 'Activities', amount: 25 },
-    { desc: 'Matcha Parfait & Gion Ramen', category: 'Food', amount: 35 },
-    { desc: 'Washi Tape & Kawaii Stickers', category: 'Shopping', amount: 40 },
-    { desc: 'Shinkansen Bullet Train Pass', category: 'Activities', amount: 55 },
-    { desc: 'Harajuku Fluffy Pancakes & Latte', category: 'Food', amount: 28 }
+    { id: 'e-1', desc: 'Flight Tickets (Return)', category: 'Flights', amount: 780 },
+    { id: 'e-2', desc: 'Ryokan 3 Nights Deposit', category: 'Stay', amount: 520 },
+    { id: 'e-3', desc: 'Kinkaku-ji & Shrine Entry', category: 'Activities', amount: 25 },
+    { id: 'e-4', desc: 'Matcha Parfait & Gion Ramen', category: 'Food', amount: 35 },
+    { id: 'e-5', desc: 'Washi Tape & Kawaii Stickers', category: 'Shopping', amount: 40 },
+    { id: 'e-6', desc: 'Shinkansen Bullet Train Pass', category: 'Activities', amount: 55 },
+    { id: 'e-7', desc: 'Harajuku Fluffy Pancakes & Latte', category: 'Food', amount: 28 }
   ]
 };
 
-// --- 2. NAVIGATION & TAB SWITCHING ---
+// State trackers
+let activeTripId = 'trip-1';
+let currentTrip = null;
+let currentItinerary = {};
+let currentPacking = [];
+let currentBudget = null;
+
+// --- 2. DATABASE INITIALIZATION & SEEDING ---
+async function initDatabaseAndLoad() {
+  try {
+    const existingTrips = await TM_DB.getAllTrips();
+    if (!existingTrips || existingTrips.length === 0) {
+      // Seed initial trips
+      for (const trip of initialTrips) {
+        await TM_DB.saveTrip(trip);
+      }
+
+      // Seed itinerary for trip-1
+      for (let day = 1; day <= 5; day++) {
+        await TM_DB.saveItineraryDay({
+          id: `itin-trip-1-day-${day}`,
+          tripId: 'trip-1',
+          day: day,
+          city: sampleScheduleDays[day].city,
+          hotel: sampleScheduleDays[day].hotel,
+          title: sampleScheduleDays[day].title,
+          slots: sampleScheduleDays[day].slots
+        });
+      }
+
+      // Seed packing items for trip-1
+      for (const item of initialPackingSeed) {
+        await TM_DB.savePackingItem({
+          id: item.id,
+          tripId: 'trip-1',
+          text: item.text,
+          category: item.category,
+          checked: item.checked
+        });
+      }
+
+      // Seed budget for trip-1
+      await TM_DB.saveBudget({
+        id: 'budget-trip-1',
+        tripId: 'trip-1',
+        totalBudget: initialBudgetSeed.totalBudget,
+        currency: initialBudgetSeed.currency,
+        categories: initialBudgetSeed.categories,
+        expenses: initialBudgetSeed.expenses
+      });
+    }
+
+    // Load active trip
+    await loadTripData(activeTripId);
+    await renderMyTrips();
+  } catch (err) {
+    console.warn('Database initialization fallback:', err);
+    // Fallback in-memory
+    currentTrip = initialTrips[0];
+    currentItinerary = sampleScheduleDays;
+    currentPacking = initialPackingSeed;
+    currentBudget = initialBudgetSeed;
+    renderAllViews();
+  }
+}
+
+async function loadTripData(tripId) {
+  activeTripId = tripId;
+  currentTrip = (await TM_DB.getTrip(tripId)) || initialTrips[0];
+
+  // Itinerary
+  const itinRecords = await TM_DB.getItinerariesByTrip(tripId);
+  currentItinerary = {};
+  if (itinRecords && itinRecords.length > 0) {
+    itinRecords.sort((a, b) => a.day - b.day);
+    itinRecords.forEach(rec => {
+      currentItinerary[rec.day] = {
+        title: rec.title,
+        hotel: rec.hotel,
+        city: rec.city,
+        slots: rec.slots
+      };
+    });
+  } else {
+    currentItinerary = sampleScheduleDays;
+  }
+
+  // Packing
+  const packRecords = await TM_DB.getPackingByTrip(tripId);
+  if (packRecords && packRecords.length > 0) {
+    currentPacking = packRecords;
+  } else {
+    currentPacking = initialPackingSeed.map(p => ({ ...p, tripId }));
+  }
+
+  // Budget
+  const budgetRecord = await TM_DB.getBudgetByTrip(tripId);
+  if (budgetRecord) {
+    currentBudget = budgetRecord;
+  } else {
+    currentBudget = {
+      id: `budget-${tripId}`,
+      tripId,
+      totalBudget: 2000,
+      currency: currentTrip.currency || '$',
+      categories: initialBudgetSeed.categories,
+      expenses: []
+    };
+  }
+
+  renderAllViews();
+}
+
+function renderAllViews() {
+  // Update Itinerary header
+  const itinDest = document.getElementById('itinDest');
+  const itinHotel = document.getElementById('itinHotel');
+  const itinPax = document.getElementById('itinPax');
+  const itinPace = document.getElementById('itinPace');
+  const itinTitle = document.getElementById('itineraryTitle');
+  const itinSub = document.getElementById('itinerarySub');
+
+  if (itinDest) itinDest.textContent = currentTrip.destination;
+  if (itinHotel) itinHotel.textContent = currentTrip.accommodation || currentTrip.hotel || 'Cozy Hotel';
+  if (itinPax) itinPax.textContent = `${currentTrip.travellersCount || 2} (${currentTrip.travellerType || 'Couple'})`;
+  if (itinPace) itinPace.textContent = currentTrip.pace || 'Moderate';
+  if (itinTitle) itinTitle.textContent = `${currentTrip.destination} Scrapbook`;
+  if (itinSub) itinSub.textContent = `${currentTrip.dates || '5 Days'} • ${currentTrip.travelStyle || 'Explore'} • ${currentTrip.budget || '$2,000'}`;
+
+  // Build day tabs
+  const tabsContainer = document.getElementById('dayTabsContainer');
+  if (tabsContainer) {
+    tabsContainer.innerHTML = '';
+    const dayKeys = Object.keys(currentItinerary);
+    dayKeys.forEach((dayNum, idx) => {
+      const dayData = currentItinerary[dayNum];
+      const btn = document.createElement('button');
+      btn.className = `day-tab ${idx === 0 ? 'active' : ''}`;
+      btn.dataset.day = dayNum;
+      btn.textContent = `Day ${dayNum} 🌸 ${dayData.city || 'Day ' + dayNum}`;
+      tabsContainer.appendChild(btn);
+    });
+  }
+
+  renderDaySchedule(1);
+  renderPackingList();
+  calculateBudgetTotals();
+}
+
+// --- 3. NAVIGATION ---
 function switchSection(sectionId) {
-  // Update nav buttons
   const navBtns = document.querySelectorAll('.nav-btn');
   navBtns.forEach(btn => {
     if (btn.getAttribute('data-target') === sectionId) {
@@ -320,7 +478,6 @@ function switchSection(sectionId) {
     }
   });
 
-  // Update visible section
   const sections = document.querySelectorAll('.page-section');
   sections.forEach(sec => {
     if (sec.id === sectionId) {
@@ -330,52 +487,45 @@ function switchSection(sectionId) {
     }
   });
 
-  // Close mobile nav if opened
   const navLinks = document.getElementById('navLinks');
-  if (navLinks.classList.contains('show')) {
+  if (navLinks && navLinks.classList.contains('show')) {
     navLinks.classList.remove('show');
   }
 
-  // Smooth scroll up to top of content
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// --- 3. ITINERARY CONTROLLER ---
-let currentDay = 1;
-
+// --- 4. ITINERARY SCHEDULE ---
 function renderDaySchedule(dayNum) {
-  currentDay = dayNum;
-  const dayInfo = sampleScheduleDays[dayNum] || sampleScheduleDays[1];
+  const dayInfo = currentItinerary[dayNum] || currentItinerary[1] || sampleScheduleDays[1];
 
-  // Update tabs active state
   document.querySelectorAll('.day-tab').forEach(tab => {
-    if (parseInt(tab.dataset.day) === dayNum) {
+    if (parseInt(tab.dataset.day) === parseInt(dayNum)) {
       tab.classList.add('active');
     } else {
       tab.classList.remove('active');
     }
   });
 
-  // Update Day Header and Hotel Pill
   const headerElem = document.getElementById('currentDayHeader');
   const hotelElem = document.getElementById('currentDayHotel');
-  if (headerElem) headerElem.textContent = `Day ${dayNum}: ${dayInfo.title}`;
-  if (hotelElem) hotelElem.textContent = `🏨 Hotel: ${dayInfo.hotel}`;
+  if (headerElem) headerElem.textContent = `Day ${dayNum}: ${dayInfo.title || 'Sightseeing & Adventure'}`;
+  if (hotelElem) hotelElem.textContent = `🏨 Staying at: ${dayInfo.hotel || currentTrip.accommodation || 'Cozy Base'}`;
 
-  // Render Time Slots
   const scheduleTimeline = document.getElementById('scheduleTimeline');
   if (!scheduleTimeline) return;
   scheduleTimeline.innerHTML = '';
 
-  dayInfo.slots.forEach(slot => {
+  const slots = dayInfo.slots || sampleScheduleDays[1].slots;
+  slots.forEach(slot => {
     const slotCard = document.createElement('div');
     slotCard.className = 'time-slot-card';
 
-    const badgesHtml = slot.tags.map(t => `<span class="mini-badge">#${t}</span>`).join('');
+    const badgesHtml = (slot.tags || []).map(t => `<span class="mini-badge">#${t}</span>`).join('');
 
     slotCard.innerHTML = `
-      <div class="slot-tag ${slot.type}">
-        <span class="slot-icon" style="font-size: 1.6rem;">${slot.icon}</span>
+      <div class="slot-tag ${slot.type || 'morning'}">
+        <span class="slot-icon" style="font-size: 1.6rem;">${slot.icon || '📍'}</span>
         <span class="slot-time">${slot.time}</span>
       </div>
       <div class="slot-detail">
@@ -403,7 +553,7 @@ function setupItineraryTabs() {
   });
 }
 
-// --- 4. PACKING LIST CONTROLLER ---
+// --- 5. PACKING LIST ---
 let activePackingCat = 'all';
 
 function renderPackingList() {
@@ -412,18 +562,18 @@ function renderPackingList() {
   grid.innerHTML = '';
 
   const filtered = activePackingCat === 'all' 
-    ? packingItems 
-    : packingItems.filter(item => item.category === activePackingCat);
+    ? currentPacking 
+    : currentPacking.filter(item => item.category === activePackingCat);
 
   filtered.forEach(item => {
     const itemCard = document.createElement('div');
     itemCard.className = `pack-item ${item.checked ? 'checked' : ''}`;
     itemCard.innerHTML = `
-      <div class="pack-left" onclick="togglePackItem(${item.id})">
+      <div class="pack-left" onclick="togglePackItem('${item.id}')">
         <div class="custom-checkbox">${item.checked ? '✔' : ''}</div>
         <span class="pack-text">${item.text}</span>
       </div>
-      <button class="delete-item-btn" onclick="deletePackItem(${item.id}, event)" title="Remove item">✕</button>
+      <button class="delete-item-btn" onclick="deletePackItem('${item.id}', event)" title="Remove item">✕</button>
     `;
     grid.appendChild(itemCard);
   });
@@ -431,23 +581,33 @@ function renderPackingList() {
   updatePackingProgress();
 }
 
-function togglePackItem(id) {
-  const item = packingItems.find(i => i.id === id);
+async function togglePackItem(id) {
+  const item = currentPacking.find(i => String(i.id) === String(id));
   if (item) {
     item.checked = !item.checked;
     renderPackingList();
+    try {
+      await TM_DB.savePackingItem(item);
+    } catch (err) {
+      console.error(err);
+    }
   }
 }
 
-function deletePackItem(id, e) {
+async function deletePackItem(id, e) {
   e.stopPropagation();
-  packingItems = packingItems.filter(i => i.id !== id);
+  currentPacking = currentPacking.filter(i => String(i.id) !== String(id));
   renderPackingList();
+  try {
+    await TM_DB.deletePackingItem(id);
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 function updatePackingProgress() {
-  const total = packingItems.length;
-  const packed = packingItems.filter(i => i.checked).length;
+  const total = currentPacking.length;
+  const packed = currentPacking.filter(i => i.checked).length;
   const percent = total > 0 ? Math.round((packed / total) * 100) : 0;
 
   const bar = document.getElementById('packBar');
@@ -460,7 +620,6 @@ function updatePackingProgress() {
 }
 
 function setupPackingEvents() {
-  // Category switch buttons
   document.querySelectorAll('.cat-pill').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
@@ -470,46 +629,52 @@ function setupPackingEvents() {
     });
   });
 
-  // Add Item
   const addBtn = document.getElementById('addPackBtn');
   const input = document.getElementById('newPackItem');
   const catSelect = document.getElementById('newPackCat');
 
   if (addBtn && input && catSelect) {
-    addBtn.addEventListener('click', () => {
+    addBtn.addEventListener('click', async () => {
       const text = input.value.trim();
       if (!text) return;
 
       const newItem = {
-        id: Date.now(),
+        id: 'p-' + Date.now(),
+        tripId: activeTripId,
         text: text,
         category: catSelect.value,
         checked: false
       };
-      packingItems.push(newItem);
+      currentPacking.push(newItem);
       input.value = '';
       renderPackingList();
+
+      try {
+        await TM_DB.savePackingItem(newItem);
+      } catch (err) {
+        console.error(err);
+      }
     });
   }
 }
 
-// --- 5. BUDGET CONTROLLER ---
+// --- 6. BUDGET CONTROLLER ---
 function calculateBudgetTotals() {
-  const curr = budgetData.currency;
+  if (!currentBudget) return;
+  const curr = currentBudget.currency || '$';
   let totalSpent = 0;
 
-  budgetData.expenses.forEach(exp => {
+  (currentBudget.expenses || []).forEach(exp => {
     totalSpent += Number(exp.amount);
   });
 
-  const remaining = budgetData.totalBudget - totalSpent;
+  const remaining = currentBudget.totalBudget - totalSpent;
 
-  // Update summary stats
   const statTotal = document.getElementById('statTotalBudget');
   const statSpent = document.getElementById('statTotalSpent');
   const statRem = document.getElementById('statRemaining');
 
-  if (statTotal) statTotal.textContent = `${curr}${budgetData.totalBudget.toLocaleString()}`;
+  if (statTotal) statTotal.textContent = `${curr}${Number(currentBudget.totalBudget).toLocaleString()}`;
   if (statSpent) statSpent.textContent = `${curr}${totalSpent.toLocaleString()}`;
   if (statRem) {
     statRem.textContent = `${curr}${remaining.toLocaleString()}`;
@@ -522,33 +687,33 @@ function calculateBudgetTotals() {
 
 function renderCategoryBars() {
   const container = document.getElementById('budgetCategoryBars');
-  if (!container) return;
+  if (!container || !currentBudget) return;
   container.innerHTML = '';
 
-  const curr = budgetData.currency;
-
-  // Re-calculate category totals from expenses
+  const curr = currentBudget.currency || '$';
   const catSpentMap = { Flights: 0, Stay: 0, Food: 0, Activities: 0, Shopping: 0 };
-  budgetData.expenses.forEach(exp => {
+  (currentBudget.expenses || []).forEach(exp => {
     if (catSpentMap[exp.category] !== undefined) {
       catSpentMap[exp.category] += Number(exp.amount);
     }
   });
 
-  Object.keys(budgetData.categories).forEach(catKey => {
-    const cat = budgetData.categories[catKey];
+  const categories = currentBudget.categories || initialBudgetSeed.categories;
+  Object.keys(categories).forEach(catKey => {
+    const cat = categories[catKey];
     const spent = catSpentMap[catKey] || 0;
-    const pct = Math.min(100, Math.round((spent / cat.allocated) * 100));
+    const allocated = cat.allocated || 1;
+    const pct = Math.min(100, Math.round((spent / allocated) * 100));
 
     const item = document.createElement('div');
     item.className = 'cat-bar-item';
     item.innerHTML = `
       <div class="cat-bar-header">
         <span>${catKey}</span>
-        <span>${curr}${spent} / ${curr}${cat.allocated} (${pct}%)</span>
+        <span>${curr}${spent} / ${curr}${allocated} (${pct}%)</span>
       </div>
       <div class="cat-bar-track">
-        <div class="cat-bar-progress" style="width: ${pct}%; background-color: ${cat.color};"></div>
+        <div class="cat-bar-progress" style="width: ${pct}%; background-color: ${cat.color || '#34D399'};"></div>
       </div>
     `;
     container.appendChild(item);
@@ -557,12 +722,12 @@ function renderCategoryBars() {
 
 function renderExpensesList() {
   const list = document.getElementById('expenseList');
-  if (!list) return;
+  if (!list || !currentBudget) return;
   list.innerHTML = '';
 
-  const curr = budgetData.currency;
+  const curr = currentBudget.currency || '$';
 
-  budgetData.expenses.slice().reverse().forEach((exp) => {
+  (currentBudget.expenses || []).slice().reverse().forEach((exp) => {
     const row = document.createElement('div');
     row.className = 'expense-row';
     row.innerHTML = `
@@ -583,45 +748,66 @@ function setupBudgetEvents() {
   const form = document.getElementById('expenseForm');
   if (!form) return;
 
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const desc = document.getElementById('expDesc').value.trim();
     const amount = parseFloat(document.getElementById('expAmount').value);
     const category = document.getElementById('expCategory').value;
 
-    if (desc && amount > 0) {
-      budgetData.expenses.push({ desc, amount, category });
+    if (desc && amount > 0 && currentBudget) {
+      const newExpense = {
+        id: 'exp-' + Date.now(),
+        desc,
+        amount,
+        category
+      };
+      if (!currentBudget.expenses) currentBudget.expenses = [];
+      currentBudget.expenses.push(newExpense);
+
       document.getElementById('expDesc').value = '';
       document.getElementById('expAmount').value = '';
       calculateBudgetTotals();
+
+      try {
+        await TM_DB.saveBudget(currentBudget);
+      } catch (err) {
+        console.error(err);
+      }
     }
   });
 }
 
-// --- 6. MY TRIPS CONTROLLER ---
-function renderMyTrips() {
+// --- 7. MY TRIPS CONTROLLER ---
+async function renderMyTrips() {
   const grid = document.getElementById('myTripsGrid');
   if (!grid) return;
   grid.innerHTML = '';
 
-  myTripsData.forEach((trip) => {
+  let trips = [];
+  try {
+    trips = await TM_DB.getAllTrips();
+  } catch (err) {
+    trips = initialTrips;
+  }
+
+  trips.forEach((trip) => {
     const card = document.createElement('div');
     card.className = 'trip-polaroid-card';
     card.innerHTML = `
       <div class="tape-strip washi-yellow" style="top:-10px; left:25%; width:90px;"></div>
       <span class="trip-badge-status">Planned 🎒</span>
-      <img src="${trip.image}" alt="${trip.destination}">
+      <img src="${trip.image || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600&auto=format&fit=crop&q=60'}" alt="${trip.destination}">
       <div class="trip-body">
         <h3>${trip.destination}</h3>
         <p class="trip-dates">🗓️ ${trip.dates}</p>
         <div class="trip-tags-row">
-          <span class="trip-tag-pill">👥 ${trip.travellers}</span>
-          <span class="trip-tag-pill">✨ ${trip.style}</span>
-          <span class="trip-tag-pill">🏨 ${trip.hotel}</span>
+          <span class="trip-tag-pill">👥 ${trip.travellersCount || 2} (${trip.travellerType || 'Travellers'})</span>
+          <span class="trip-tag-pill">✨ ${trip.travelStyle || 'Vacation'}</span>
+          <span class="trip-tag-pill">🏨 ${trip.accommodation || trip.hotel || 'Cozy Hotel'}</span>
           <span class="trip-tag-pill">🪙 Budget: ${trip.budget}</span>
         </div>
         <div class="trip-actions">
-          <button class="btn btn-secondary btn-full" onclick="loadTripIntoItinerary('${trip.destination}', '${trip.hotel}')">
+          <button class="btn btn-secondary btn-full" onclick="selectTrip('${trip.id}')">
             View Schedule 📖
           </button>
         </div>
@@ -631,15 +817,13 @@ function renderMyTrips() {
   });
 }
 
-function loadTripIntoItinerary(destination, hotel) {
-  document.getElementById('itinDest').textContent = destination;
-  document.getElementById('itinHotel').textContent = hotel;
-  document.getElementById('itineraryTitle').textContent = `${destination} Scrapbook`;
+async function selectTrip(tripId) {
+  await loadTripData(tripId);
   switchSection('itinerary');
   renderDaySchedule(1);
 }
 
-// --- 7. DESTINATIONS CONTROLLER ---
+// --- 8. DESTINATIONS CONTROLLER ---
 function renderDestinations() {
   const grid = document.getElementById('destGrid');
   if (!grid) return;
@@ -685,7 +869,6 @@ function prefillTripPlan(destination, days, style, hotel) {
     }
   }
 
-  // Pre-fill today + duration
   const today = new Date();
   const returnD = new Date();
   returnD.setDate(today.getDate() + Number(days));
@@ -697,21 +880,19 @@ function prefillTripPlan(destination, days, style, hotel) {
     retInput.value = returnD.toISOString().split('T')[0];
   }
 
-  // Set budget default
   const budgetInput = document.getElementById('budgetInput');
   if (budgetInput && !budgetInput.value) budgetInput.value = 1800;
 
   window.scrollTo({ top: 150, behavior: 'smooth' });
 }
 
-// --- 8. PLAN TRIP FORM CONTROLLER ---
+// --- 9. PLAN TRIP FORM CONTROLLER (PERSISTED) ---
 function setupTripForm() {
   const form = document.getElementById('tripForm');
   const depInput = document.getElementById('depDate');
   const retInput = document.getElementById('retDate');
   const durInput = document.getElementById('calcDuration');
 
-  // Auto calculate duration from dates
   function updateDurationFromDates() {
     if (depInput.value && retInput.value) {
       const start = new Date(depInput.value);
@@ -730,61 +911,120 @@ function setupTripForm() {
   }
 
   if (form) {
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const destination = document.getElementById('destInput').value.trim();
       const dep = depInput.value;
       const ret = retInput.value;
-      const duration = durInput.value || 5;
+      const duration = parseInt(durInput.value) || 5;
       const currency = document.getElementById('currencySelect').value;
-      const budget = document.getElementById('budgetInput').value;
+      const budget = parseFloat(document.getElementById('budgetInput').value) || 1500;
       const travellerType = document.getElementById('travellerType').value;
-      const travellerCount = document.getElementById('travellerCount').value;
+      const travellerCount = parseInt(document.getElementById('travellerCount').value) || 1;
       const travelStyle = document.getElementById('travelStyle').value;
       const accomType = document.getElementById('accomType').value;
       const pace = document.getElementById('tripPace').value;
+      const notes = document.getElementById('tripNotes').value.trim();
 
-      // Create new trip item
+      const newTripId = 'trip-' + Date.now();
+
+      // 1. New Trip Object
       const newTrip = {
-        id: 'trip-' + Date.now(),
+        id: newTripId,
         destination: destination,
         image: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600&auto=format&fit=crop&q=60',
         dates: `${dep} to ${ret} (${duration} Days)`,
-        travellers: `${travellerCount} (${travellerType})`,
-        style: travelStyle,
+        duration: duration,
         budget: `${currency}${budget}`,
-        hotel: accomType,
-        pace: pace
+        currency: currency,
+        travellersCount: travellerCount,
+        travellerType: travellerType,
+        travelStyle: travelStyle,
+        accommodation: accomType,
+        pace: pace,
+        notes: notes
       };
 
-      // Add to trips list at the beginning
-      myTripsData.unshift(newTrip);
-      renderMyTrips();
+      // 2. Persist Trip
+      await TM_DB.saveTrip(newTrip);
 
-      // Update Itinerary View with submitted details
-      document.getElementById('itinDest').textContent = destination;
-      document.getElementById('itinHotel').textContent = accomType;
-      document.getElementById('itinPax').textContent = `${travellerCount} (${travellerType})`;
-      document.getElementById('itinPace').textContent = pace;
-      document.getElementById('itineraryTitle').textContent = `${destination} Scrapbook Itinerary`;
-      document.getElementById('itinerarySub').textContent = `${duration} Days • ${travelStyle} • ${currency}${budget} Budget`;
+      // 3. Generate & Persist Itinerary for each day
+      for (let day = 1; day <= duration; day++) {
+        await TM_DB.saveItineraryDay({
+          id: `itin-${newTripId}-day-${day}`,
+          tripId: newTripId,
+          day: day,
+          city: destination.split(',')[0].trim(),
+          hotel: accomType,
+          title: `Day ${day} Adventure in ${destination.split(',')[0].trim()}`,
+          slots: [
+            {
+              time: 'Morning 09:00',
+              type: 'morning',
+              icon: '🥐',
+              title: `Morning Exploration & Local Breakfast`,
+              desc: `Start the day at a warm bakery, savoring local specialties before heading out.`,
+              tags: ['Breakfast', 'Morning Stroll']
+            },
+            {
+              time: 'Afternoon 13:30',
+              type: 'afternoon',
+              icon: '🏛️',
+              title: `Key Sightseeing & Culture Tour`,
+              desc: `Immerse in historic landmarks, photography spots and cute boutique shops.`,
+              tags: [travelStyle, 'Sightseeing']
+            },
+            {
+              time: 'Evening 19:00',
+              type: 'evening',
+              icon: '🌙',
+              title: `Cozy Dinner & Night Walk`,
+              desc: `Enjoy delicious dinner at a top-rated local bistro, followed by a scenic evening walk.`,
+              tags: ['Dinner', pace]
+            }
+          ]
+        });
+      }
 
-      // Update budget tracker
-      budgetData.totalBudget = Number(budget) || 2000;
-      budgetData.currency = currency;
-      calculateBudgetTotals();
+      // 4. Seed initial packing for this trip
+      for (const item of initialPackingSeed) {
+        await TM_DB.savePackingItem({
+          id: `p-${newTripId}-${item.id}`,
+          tripId: newTripId,
+          text: item.text,
+          category: item.category,
+          checked: false
+        });
+      }
 
-      // Switch to Itinerary view
+      // 5. Seed budget for this trip
+      await TM_DB.saveBudget({
+        id: `budget-${newTripId}`,
+        tripId: newTripId,
+        totalBudget: budget,
+        currency: currency,
+        categories: {
+          Flights: { allocated: Math.round(budget * 0.35), spent: 0, color: '#F472B6' },
+          Stay: { allocated: Math.round(budget * 0.35), spent: 0, color: '#FBBF24' },
+          Food: { allocated: Math.round(budget * 0.15), spent: 0, color: '#34D399' },
+          Activities: { allocated: Math.round(budget * 0.10), spent: 0, color: '#60A5FA' },
+          Shopping: { allocated: Math.round(budget * 0.05), spent: 0, color: '#A78BFA' }
+        },
+        expenses: []
+      });
+
+      // Reload trips & load this new trip into the view
+      await renderMyTrips();
+      await loadTripData(newTripId);
       switchSection('itinerary');
       renderDaySchedule(1);
     });
   }
 }
 
-// --- 9. INITIALIZATION ---
-document.addEventListener('DOMContentLoaded', () => {
-  // Setup mobile navigation toggle
+// --- 10. INITIALIZATION ---
+document.addEventListener('DOMContentLoaded', async () => {
   const mobileToggle = document.getElementById('mobileToggle');
   const navLinks = document.getElementById('navLinks');
   if (mobileToggle && navLinks) {
@@ -793,7 +1033,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Setup navigation links click
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -802,7 +1041,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Default dates for form
   const today = new Date();
   const nextWeek = new Date();
   nextWeek.setDate(today.getDate() + 5);
@@ -812,17 +1050,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (depInput && !depInput.value) depInput.value = today.toISOString().split('T')[0];
   if (retInput && !retInput.value) retInput.value = nextWeek.toISOString().split('T')[0];
 
-  // Initialize components
   setupItineraryTabs();
-  renderDaySchedule(1);
-
   setupPackingEvents();
-  renderPackingList();
-
   setupBudgetEvents();
-  calculateBudgetTotals();
-
-  renderMyTrips();
   renderDestinations();
   setupTripForm();
+
+  // Initialize DB and load data
+  await initDatabaseAndLoad();
 });
