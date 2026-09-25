@@ -1064,7 +1064,133 @@ function prefillTripPlan(destination, days, style, hotel) {
   window.scrollTo({ top: 150, behavior: 'smooth' });
 }
 
-// --- 9. PLAN TRIP FORM CONTROLLER (CREATE TRIP) ---
+let lastTripPreferences = null;
+
+async function executeTripGeneration(preferences) {
+  const submitBtn = document.getElementById('tripSubmitBtn');
+  const statusBox = document.getElementById('aiStatusBox');
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '✨ Curating Dream Trip with Groq AI (gpt-oss-120b)... 🌸';
+  }
+
+  if (statusBox) {
+    statusBox.style.display = 'block';
+    statusBox.innerHTML = `
+      <div class="cute-tag" style="background: var(--pastel-yellow); padding: 8px 16px; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 8px;">
+        <span>⏳</span> Groq AI is crafting your pastel itinerary, weather-ready packing list & budget...
+      </div>
+    `;
+  }
+
+  try {
+    const result = await API.generateTrip(preferences);
+
+    if (statusBox) {
+      statusBox.style.display = 'none';
+      statusBox.innerHTML = '';
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '🌸 Save Trip & Generate Scrapbook';
+    }
+
+    activeTripId = result.tripId;
+    await renderMyTrips();
+    await loadTripData(activeTripId);
+    switchSection('itinerary');
+    renderDaySchedule(1);
+
+  } catch (err) {
+    console.error('Groq AI generation error:', err);
+
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '🌸 Save Trip & Generate Scrapbook';
+    }
+
+    if (statusBox) {
+      statusBox.style.display = 'block';
+      statusBox.innerHTML = `
+        <div style="background: #FFF1F2; border: 2px solid #F43F5E; border-radius: 16px; padding: 12px 18px; color: #9F1239; font-size: 0.92rem; text-align: center; box-shadow: 2px 3px 0px rgba(74, 64, 54, 0.1);">
+          <p style="font-weight: 700; margin-bottom: 4px;">🌸 AI Generation Notice</p>
+          <p style="margin: 4px 0 12px; font-size: 0.88rem;">${err.message || 'Unable to connect to Groq AI'}</p>
+          <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary" onclick="retryGenerateTrip()" style="font-size: 0.85rem; padding: 6px 14px;">
+              🔄 Retry with Groq AI
+            </button>
+            <button type="button" class="btn btn-primary" onclick="fallbackSaveTrip()" style="font-size: 0.85rem; padding: 6px 14px;">
+              📝 Save Standard Scrapbook
+            </button>
+          </div>
+        </div>
+      `;
+    }
+  }
+}
+
+window.retryGenerateTrip = function() {
+  if (lastTripPreferences) {
+    executeTripGeneration(lastTripPreferences);
+  }
+};
+
+window.fallbackSaveTrip = async function() {
+  const statusBox = document.getElementById('aiStatusBox');
+  if (statusBox) statusBox.style.display = 'none';
+
+  if (!lastTripPreferences) return;
+  const p = lastTripPreferences;
+  const newTripId = 'trip-' + Date.now();
+
+  if (isBackendActive) {
+    try {
+      await API.createTrip({
+        id: newTripId,
+        destination: p.destination,
+        start_date: p.start_date,
+        end_date: p.end_date,
+        duration: p.duration,
+        budget: p.budget,
+        currency: p.currency,
+        travellers_count: p.travellers_count,
+        traveller_type: p.traveller_type,
+        travel_style: p.travel_style,
+        accommodation: p.accommodation,
+        pace: p.pace,
+        notes: p.notes
+      });
+    } catch (e) {}
+  }
+
+  try {
+    await TM_DB.saveTrip({
+      id: newTripId,
+      destination: p.destination,
+      image: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600&auto=format&fit=crop&q=60',
+      dates: `${p.start_date} to ${p.end_date} (${p.duration} Days)`,
+      duration: p.duration,
+      budget: `${p.currency}${p.budget}`,
+      currency: p.currency,
+      travellersCount: p.travellers_count,
+      travellerType: p.traveller_type,
+      travelStyle: p.travel_style,
+      accommodation: p.accommodation,
+      pace: p.pace,
+      notes: p.notes
+    });
+  } catch (e) {}
+
+  activeTripId = newTripId;
+  await renderMyTrips();
+  await loadTripData(activeTripId);
+  switchSection('itinerary');
+  renderDaySchedule(1);
+};
+
+// --- 9. PLAN TRIP FORM CONTROLLER (CREATE TRIP VIA GROQ AI) ---
 function setupTripForm() {
   const form = document.getElementById('tripForm');
   const depInput = document.getElementById('depDate');
@@ -1105,96 +1231,22 @@ function setupTripForm() {
       const pace = document.getElementById('tripPace').value;
       const notes = document.getElementById('tripNotes').value.trim();
 
-      const newTripId = 'trip-' + Date.now();
+      lastTripPreferences = {
+        destination,
+        start_date: dep,
+        end_date: ret,
+        duration,
+        budget,
+        currency,
+        travellers_count: travellerCount,
+        traveller_type: travellerType,
+        travel_style: travelStyle,
+        accommodation: accomType,
+        pace,
+        notes
+      };
 
-      if (isBackendActive) {
-        // Create in Backend DB
-        try {
-          await API.createTrip({
-            id: newTripId,
-            destination,
-            start_date: dep,
-            end_date: ret,
-            duration,
-            budget,
-            currency,
-            travellers_count: travellerCount,
-            traveller_type: travellerType,
-            travel_style: travelStyle,
-            accommodation: accomType,
-            pace,
-            notes
-          });
-        } catch (err) {
-          console.error('Backend save failed:', err);
-        }
-      }
-
-      // Also persist to local TM_DB
-      try {
-        const newTrip = {
-          id: newTripId,
-          destination,
-          image: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600&auto=format&fit=crop&q=60',
-          dates: `${dep} to ${ret} (${duration} Days)`,
-          duration,
-          budget: `${currency}${budget}`,
-          currency,
-          travellersCount: travellerCount,
-          travellerType,
-          travelStyle,
-          accommodation: accomType,
-          pace,
-          notes
-        };
-        await TM_DB.saveTrip(newTrip);
-
-        for (let day = 1; day <= duration; day++) {
-          await TM_DB.saveItineraryDay({
-            id: `itin-${newTripId}-day-${day}`,
-            tripId: newTripId,
-            day,
-            city: destination.split(',')[0].trim(),
-            hotel: accomType,
-            title: `Day ${day} in ${destination.split(',')[0].trim()}`,
-            slots: [
-              { time: 'Morning 09:00', type: 'morning', icon: '🥐', title: 'Breakfast & Stroll', desc: 'Savor local pastries.', tags: ['Morning'] },
-              { time: 'Afternoon 13:30', type: 'afternoon', icon: '🏛️', title: 'Sightseeing & Culture', desc: 'Tour historic landmarks.', tags: [travelStyle] },
-              { time: 'Evening 19:00', type: 'evening', icon: '🌙', title: 'Dinner & Sunset', desc: 'Evening meal and relaxation.', tags: ['Dinner', pace] }
-            ]
-          });
-        }
-
-        for (const item of initialPackingSeed) {
-          await TM_DB.savePackingItem({
-            id: `p-${newTripId}-${item.id}`,
-            tripId: newTripId,
-            text: item.text,
-            category: item.category,
-            checked: false
-          });
-        }
-
-        await TM_DB.saveBudget({
-          id: `budget-${newTripId}`,
-          tripId: newTripId,
-          totalBudget: budget,
-          currency,
-          categories: {
-            Flights: { allocated: Math.round(budget * 0.35), spent: 0, color: '#F472B6' },
-            Stay: { allocated: Math.round(budget * 0.35), spent: 0, color: '#FBBF24' },
-            Food: { allocated: Math.round(budget * 0.15), spent: 0, color: '#34D399' },
-            Activities: { allocated: Math.round(budget * 0.10), spent: 0, color: '#60A5FA' },
-            Shopping: { allocated: Math.round(budget * 0.05), spent: 0, color: '#A78BFA' }
-          },
-          expenses: []
-        });
-      } catch (e) {}
-
-      await renderMyTrips();
-      await loadTripData(newTripId);
-      switchSection('itinerary');
-      renderDaySchedule(1);
+      await executeTripGeneration(lastTripPreferences);
     });
   }
 }

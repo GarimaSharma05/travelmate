@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-TravelMate - Minimal Backend Server
-Uses Python standard library (http.server + sqlite3) with zero external dependencies.
+TravelMate - Backend Server with Groq AI Integration
+Model: openai/gpt-oss-120b
 Endpoints:
+  POST   /generate-trip          - Generate trip via Groq AI, save to DB, return plan
   GET    /api/trips              - List all trips
   POST   /api/trips              - Create trip (+ default itinerary, packing, budget)
   GET    /api/trips/<id>         - Get trip details with itinerary, packing, budget
@@ -18,12 +19,35 @@ import os
 import json
 import sqlite3
 import mimetypes
+import urllib.request
+import urllib.error
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_FILE = os.path.join(BASE_DIR, "travelmate.db")
 PORT = 8080
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL = "openai/gpt-oss-120b"
+
+def load_env():
+    """Load key-value pairs from .env into os.environ if not already set."""
+    env_file = os.path.join(BASE_DIR, ".env")
+    if os.path.isfile(env_file):
+        with open(env_file, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, val = line.split("=", 1)
+                    key = key.strip()
+                    val = val.strip().strip('"').strip("'")
+                    os.environ[key] = val
+
+def get_groq_api_key():
+    """Retrieve Groq API key from environment (.env)."""
+    load_env()
+    # Check XAI_API_KEY as requested, fallback to GROQ_API_KEY
+    return os.environ.get("XAI_API_KEY") or os.environ.get("GROQ_API_KEY") or ""
 
 def get_db():
     conn = sqlite3.connect(DB_FILE)
@@ -87,7 +111,6 @@ def init_db():
         )
         """)
 
-        # Check if trips table is empty, if so seed initial mock data
         cursor = conn.cursor()
         cursor.execute("SELECT COUNT(*) FROM trips")
         count = cursor.fetchone()[0]
@@ -106,7 +129,7 @@ def seed_initial_data(conn):
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, trips)
 
-    # 2. Itinerary for trip-1 (Kyoto & Tokyo)
+    # 2. Itinerary for trip-1
     days = [
         (1, "Kyoto", "Komorebi Boutique Ryokan", [
             {"time": "Morning 09:30", "type": "morning", "icon": "🍵", "title": "Check-in & Welcome Sencha Tea", "desc": "Settle into tatami room, put on yukata, and enjoy fresh matcha mochi in the garden.", "tags": ["Check-in", "Tea Time"]},
@@ -140,7 +163,7 @@ def seed_initial_data(conn):
         VALUES (?, ?, ?, ?, ?, ?)
         """, (f"itin-trip-1-day-{day_num}", "trip-1", day_num, city, hotel, json.dumps(activities)))
 
-    # 3. Packing items for trip-1
+    # 3. Packing
     packing_items = [
         ("p-1", "trip-1", "Passport & Photocopies", "documents", 1),
         ("p-2", "trip-1", "Boarding Pass & Hotel Confirmations", "documents", 1),
@@ -163,7 +186,7 @@ def seed_initial_data(conn):
     VALUES (?, ?, ?, ?, ?)
     """, packing_items)
 
-    # 4. Budget for trip-1
+    # 4. Budget
     categories = {
         "Flights": {"allocated": 850, "spent": 780, "color": "#F472B6"},
         "Stay": {"allocated": 750, "spent": 520, "color": "#FBBF24"},
@@ -184,6 +207,195 @@ def seed_initial_data(conn):
     INSERT INTO budget (id, trip_id, total_budget, currency, categories, expenses)
     VALUES (?, ?, ?, ?, ?, ?)
     """, ("budget-trip-1", "trip-1", 2400.0, "$", json.dumps(categories), json.dumps(expenses)))
+
+def call_groq_ai(preferences):
+    """
+    Call Groq AI with model openai/gpt-oss-120b and return structured JSON.
+    """
+    api_key = get_groq_api_key()
+    if not api_key or api_key == "$$$$$":
+        raise ValueError("XAI_API_KEY is not configured in .env (found placeholder '$$$$$'). Please replace it with your active Groq API key in .env.")
+
+    dest = preferences.get("destination", "Kyoto & Tokyo, Japan")
+    s_date = preferences.get("start_date") or preferences.get("departure_date") or ""
+    e_date = preferences.get("end_date") or preferences.get("return_date") or ""
+    duration = int(preferences.get("duration", 5))
+    budget = float(preferences.get("budget", 1500.0))
+    currency = preferences.get("currency", "$")
+    pax_count = preferences.get("travellers_count", 2)
+    pax_type = preferences.get("traveller_type", "Couple / Pair")
+    style = preferences.get("travel_style", "Cultural & Historic")
+    accom = preferences.get("accommodation", "Cozy Boutique Hotel")
+    pace = preferences.get("pace", "Moderate")
+    notes = preferences.get("notes", "")
+
+    system_prompt = (
+        "You are TravelMate AI, a travel planner specializing in cute, pastel scrapbook travel itineraries. "
+        "Return ONLY a valid JSON object matching the exact schema below without any markdown fences or explanation.\n"
+        "Schema:\n"
+        "{\n"
+        '  "trip_summary": {\n'
+        '    "title": "Title with cute emoji",\n'
+        '    "description": "Short 2-3 sentence overview of the trip experience"\n'
+        "  },\n"
+        '  "itinerary": [\n'
+        "    {\n"
+        '      "day": 1,\n'
+        '      "city": "City name",\n'
+        '      "hotel": "Hotel/Ryokan/B&B name",\n'
+        '      "title": "Day title with emoji",\n'
+        '      "slots": [\n'
+        '        {"time": "Morning 09:00", "type": "morning", "icon": "🥐", "title": "...", "desc": "...", "tags": ["tag1", "tag2"]},\n'
+        '        {"time": "Afternoon 13:30", "type": "afternoon", "icon": "🏛️", "title": "...", "desc": "...", "tags": ["tag1", "tag2"]},\n'
+        '        {"time": "Evening 19:00", "type": "evening", "icon": "🏮", "title": "...", "desc": "...", "tags": ["tag1", "tag2"]}\n'
+        "      ]\n"
+        "    }\n"
+        "  ],\n"
+        '  "packing_list": [\n'
+        '    {"text": "Specific item considering destination & expected seasonal weather", "category": "documents"}\n'
+        "  ],\n"
+        '  "budget_breakdown": {\n'
+        '    "categories": {\n'
+        '      "Flights": {"allocated": 0, "spent": 0, "color": "#F472B6"},\n'
+        '      "Stay": {"allocated": 0, "spent": 0, "color": "#FBBF24"},\n'
+        '      "Food": {"allocated": 0, "spent": 0, "color": "#34D399"},\n'
+        '      "Activities": {"allocated": 0, "spent": 0, "color": "#60A5FA"},\n'
+        '      "Shopping": {"allocated": 0, "spent": 0, "color": "#A78BFA"}\n'
+        "    }\n"
+        "  }\n"
+        "}"
+    )
+
+    user_prompt = (
+        f"Create a charming {duration}-day travel plan for:\n"
+        f"- Destination: {dest}\n"
+        f"- Dates: {s_date} to {e_date} ({duration} days)\n"
+        f"- Budget: {currency}{budget}\n"
+        f"- Travellers: {pax_count} ({pax_type})\n"
+        f"- Travel Style: {style}\n"
+        f"- Accommodation: {accom}\n"
+        f"- Pace: {pace}\n"
+        f"- Scrapbook notes: {notes}\n\n"
+        f"Requirements:\n"
+        f"1. Generate exactly {duration} day items in 'itinerary'. Each day must have city, hotel, and morning, afternoon, evening slots.\n"
+        f"2. In 'packing_list', provide 12-16 items tailored to the destination and the weather expected during {s_date or 'the trip'}, categorized into 'documents', 'clothes', 'toiletries', 'tech', or 'misc'.\n"
+        f"3. In 'budget_breakdown', distribute the {currency}{budget} across Flights, Stay, Food, Activities, and Shopping."
+    )
+
+    payload = {
+        "model": GROQ_MODEL,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ],
+        "response_format": {"type": "json_object"},
+        "temperature": 0.7
+    }
+
+    req_data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        GROQ_API_URL,
+        data=req_data,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "TravelMate/1.0"
+        },
+        method="POST"
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            raw_response = resp.read().decode("utf-8")
+            res_json = json.loads(raw_response)
+            content_str = res_json["choices"][0]["message"]["content"]
+            return json.loads(content_str)
+    except urllib.error.HTTPError as http_err:
+        err_msg = http_err.read().decode("utf-8", errors="ignore")
+        raise RuntimeError(f"Groq API Error ({http_err.code}): {err_msg}")
+    except urllib.error.URLError as url_err:
+        raise RuntimeError(f"Groq Connection Error: {url_err.reason}")
+
+def save_generated_trip(preferences, ai_data):
+    """Save Groq-generated trip, itinerary, weather packing, and budget into SQLite."""
+    trip_id = preferences.get("id") or f"trip-{int(os.times().system * 1000)}"
+    dest = preferences.get("destination", "Dream Trip")
+    s_date = preferences.get("start_date") or preferences.get("departure_date") or ""
+    e_date = preferences.get("end_date") or preferences.get("return_date") or ""
+    duration = int(preferences.get("duration", 5))
+    budget_val = float(preferences.get("budget", 1500.0))
+    currency = preferences.get("currency", "$")
+    pax_count = int(preferences.get("travellers_count", 2))
+    pax_type = preferences.get("traveller_type", "Couple / Pair")
+    style = preferences.get("travel_style", "Cultural & Historic")
+    accom = preferences.get("accommodation", "Cozy Boutique Hotel")
+    pace = preferences.get("pace", "Moderate")
+    notes = preferences.get("notes", "")
+
+    summary = ai_data.get("trip_summary", {})
+    summary_desc = summary.get("description", notes)
+
+    with get_db() as conn:
+        # 1. Insert Trip
+        conn.execute("""
+        INSERT OR REPLACE INTO trips (id, destination, start_date, end_date, duration, budget, currency, travellers_count, traveller_type, travel_style, accommodation, pace, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (trip_id, dest, s_date, e_date, duration, budget_val, currency, pax_count, pax_type, style, accom, pace, summary_desc))
+
+        # 2. Insert Itinerary Days
+        days = ai_data.get("itinerary", [])
+        if not days:
+            days = [{"day": d, "city": dest.split(",")[0], "hotel": accom, "slots": []} for d in range(1, duration + 1)]
+
+        for d_info in days:
+            d_num = int(d_info.get("day", 1))
+            city = d_info.get("city") or dest.split(",")[0].strip()
+            hotel = d_info.get("hotel") or accom
+            slots = d_info.get("slots", [])
+            conn.execute("""
+            INSERT OR REPLACE INTO itinerary (id, trip_id, day_number, city, hotel, activities)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """, (f"itin-{trip_id}-day-{d_num}", trip_id, d_num, city, hotel, json.dumps(slots)))
+
+        # 3. Insert Weather & Destination-aware Packing List
+        packing_items = ai_data.get("packing_list", [])
+        if not packing_items:
+            packing_items = [
+                {"text": "Passport & Travel Documents", "category": "documents"},
+                {"text": "Comfortable Walking Shoes", "category": "clothes"},
+                {"text": "Weather-appropriate Layered Jacket", "category": "clothes"},
+                {"text": "Sunscreen & Daily Toiletries", "category": "toiletries"},
+                {"text": "Phone Charger & Powerbank", "category": "tech"},
+                {"text": "Travel Journal & Memories Pen", "category": "misc"}
+            ]
+
+        for idx, item in enumerate(packing_items):
+            item_text = item.get("text") or item.get("name") or "Essential Item"
+            cat = str(item.get("category", "misc")).lower()
+            if cat not in ("documents", "clothes", "toiletries", "tech", "misc"):
+                cat = "misc"
+            conn.execute("""
+            INSERT OR REPLACE INTO packing (id, trip_id, item_name, category, is_checked)
+            VALUES (?, ?, ?, ?, 0)
+            """, (f"p-{trip_id}-{idx+1}", trip_id, item_text, cat))
+
+        # 4. Insert Budget Breakdown
+        b_breakdown = ai_data.get("budget_breakdown", {})
+        cats = b_breakdown.get("categories", {})
+        if not cats:
+            cats = {
+                "Flights": {"allocated": round(budget_val * 0.35), "spent": 0, "color": "#F472B6"},
+                "Stay": {"allocated": round(budget_val * 0.35), "spent": 0, "color": "#FBBF24"},
+                "Food": {"allocated": round(budget_val * 0.15), "spent": 0, "color": "#34D399"},
+                "Activities": {"allocated": round(budget_val * 0.10), "spent": 0, "color": "#60A5FA"},
+                "Shopping": {"allocated": round(budget_val * 0.05), "spent": 0, "color": "#A78BFA"}
+            }
+        conn.execute("""
+        INSERT OR REPLACE INTO budget (id, trip_id, total_budget, currency, categories, expenses)
+        VALUES (?, ?, ?, ?, ?, '[]')
+        """, (f"budget-{trip_id}", trip_id, budget_val, currency, json.dumps(cats)))
+
+    return trip_id
 
 class TravelMateHandler(BaseHTTPRequestHandler):
     def _send_cors_headers(self):
@@ -299,12 +511,31 @@ class TravelMateHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         parsed = urlparse(self.path)
-        parts = [p for p in parsed.path.rstrip("/").split("/") if p]
+        clean_path = parsed.path.rstrip("/")
+        parts = [p for p in clean_path.split("/") if p]
 
+        # 1. AI Trip Generation Endpoint: /generate-trip or /api/generate-trip
+        if clean_path in ("/generate-trip", "/api/generate-trip"):
+            body = self._read_json()
+            try:
+                ai_plan = call_groq_ai(body)
+                trip_id = save_generated_trip(body, ai_plan)
+                return self._send_json({
+                    "success": True,
+                    "tripId": trip_id,
+                    "plan": ai_plan
+                }, status=201)
+            except Exception as e:
+                return self._send_json({
+                    "success": False,
+                    "error": str(e)
+                }, status=400)
+
+        # 2. Standard API Endpoints
         if len(parts) >= 1 and parts[0] == "api":
             body = self._read_json()
 
-            # POST /api/trips (Create trip + auto generate itinerary, packing, budget)
+            # POST /api/trips
             if len(parts) == 2 and parts[1] == "trips":
                 trip_id = body.get("id") or f"trip-{int(os.times().system * 1000)}"
                 dest = body.get("destination", "New Dream Trip")
@@ -321,13 +552,11 @@ class TravelMateHandler(BaseHTTPRequestHandler):
                 notes = body.get("notes", "")
 
                 with get_db() as conn:
-                    # Insert trip
                     conn.execute("""
                     INSERT OR REPLACE INTO trips (id, destination, start_date, end_date, duration, budget, currency, travellers_count, traveller_type, travel_style, accommodation, pace, notes)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, (trip_id, dest, s_date, e_date, duration, budget_val, currency, pax_count, pax_type, style, accom, pace, notes))
 
-                    # Auto-generate default itinerary if not provided
                     city_name = dest.split(",")[0].strip()
                     for d in range(1, duration + 1):
                         day_slots = [
@@ -340,7 +569,6 @@ class TravelMateHandler(BaseHTTPRequestHandler):
                         VALUES (?, ?, ?, ?, ?, ?)
                         """, (f"itin-{trip_id}-day-{d}", trip_id, d, city_name, accom, json.dumps(day_slots)))
 
-                    # Auto-seed packing
                     default_packing = [
                         ("Passport & ID Docs", "documents"),
                         ("Comfortable Footwear", "clothes"),
@@ -355,7 +583,6 @@ class TravelMateHandler(BaseHTTPRequestHandler):
                         VALUES (?, ?, ?, ?, 0)
                         """, (f"p-{trip_id}-{idx+1}", trip_id, item_txt, cat))
 
-                    # Auto-seed budget
                     cats = {
                         "Flights": {"allocated": round(budget_val * 0.35), "spent": 0, "color": "#F472B6"},
                         "Stay": {"allocated": round(budget_val * 0.35), "spent": 0, "color": "#FBBF24"},
@@ -482,10 +709,13 @@ class TravelMateHandler(BaseHTTPRequestHandler):
         return self._send_json({"error": "Not Found"}, status=404)
 
 def run():
+    load_env()
     init_db()
     server_address = ("", PORT)
     httpd = HTTPServer(server_address, TravelMateHandler)
+    key_status = "set" if get_groq_api_key() and get_groq_api_key() != "$$$$$" else "placeholder ($$$$$)"
     print(f"✨ TravelMate backend running on http://localhost:{PORT}")
+    print(f"🤖 Groq model configured: {GROQ_MODEL} (API key: {key_status})")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

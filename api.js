@@ -98,5 +98,23 @@ const API = {
     });
     if (!res.ok) throw new Error('Failed to save budget');
     return res.json();
+  },
+
+  // 5. Groq AI Generation Endpoint
+  async generateTrip(preferences) {
+    const rootUrl = window.location.protocol.startsWith('http')
+      ? window.location.origin
+      : 'http://127.0.0.1:8080';
+
+    const res = await fetch(`${rootUrl}/generate-trip`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(preferences)
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Failed to generate trip with Groq AI');
+    }
+    return data;
   }
 };
